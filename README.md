@@ -28,8 +28,8 @@ All algorithms listed below are fictional for entertainment purposes and have no
 - Evolutionary Polymorphism Analysis
 
 How to Use
-1. Download the project and open index.html directly with any mainstream browser
-2. Fill in any information including name, birthday, blood type and other fields (the content will not affect the final result)
+1. Download the project and open file.html directly with any mainstream browser
+2. Fill in any information including name, birthday, blood type and other fields。
 3. Check any combination of the optional algorithms
 4. Click the Begin Prediction button to start the simulated computing process
 5. Wait for the calculation to complete and view the "high-precision scientific prediction result"
