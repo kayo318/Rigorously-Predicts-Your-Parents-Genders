@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>親の性別を科学的に予測する</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;600&family=Noto+Serif+JP:wght@300;400;600&family=IM+Fell+English:ital@0;1&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap');
+
+:root {
+  --bg: #f4f2ed;
+  --fg: #111010;
+  --mid: #7a7770;
+  --soft: #a8a49e;
+  --border: #ccc9c1;
+  --paper: #edeae4;
+  --ink: #1e1c18;
+  --red: #8b1a1a;
+  --green-dim: #1a4a2a;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: 'Noto Serif TC','Noto Serif JP','IM Fell English',serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* grain */
+body::before {
+  content:'';
+  position:fixed; inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+  pointer-events:none; z-index:9999; opacity:.7;
+}
+
+/* ── LANG BAR ── */
+.lang-bar {
+  position:fixed; top:0; left:0; right:0;
+  display:flex; justify-content:flex-end;
+  padding:14px 28px; gap:5px; z-index:200;
+  background:linear-gradient(to bottom,var(--bg) 55%,transparent);
+}
+.lang-btn {
+  font-family:'Space Mono',monospace;
+  font-size:9.5px; letter-spacing:.14em;
+  padding:5px 12px;
+  border:1px solid var(--border);
+  background:transparent; color:var(--mid);
+  cursor:pointer; transition:all .18s;
+  text-transform:uppercase;
+}
+.lang-btn:hover,.lang-btn.active {
+  background:var(--fg); color:var(--bg); border-color:var(--fg);
+}
+
+/* ── HEADER ── */
+header {
+  max-width:720px; margin:0 auto;
+  padding:96px 32px 40px;
+  text-align:center;
+}
+.eyebrow {
+  font-family:'Space Mono',monospace;
+  font-size:9px; letter-spacing:.32em;
+  color:var(--mid); text-transform:uppercase;
+  display:block; margin-bottom:26px;
+}
+h1 {
+  font-size:clamp(26px,5.5vw,50px);
+  font-weight:300; line-height:1.2;
+  letter-spacing:-.01em; margin-bottom:18px; color:var(--ink);
+}
+h1 em { font-style:italic; }
+.subtitle {
+  font-size:12.5px; color:var(--mid);
+  line-height:1.9; max-width:480px;
+  margin:0 auto 36px; font-style:italic;
+}
+.rule { width:50px; height:1px; background:var(--border); margin:0 auto 44px; }
+
+/* ── MAIN ── */
+main { max-width:720px; margin:0 auto; padding:0 32px 80px; }
+
+/* ── FORM SECTION ── */
+.form-section {
+  background:var(--paper);
+  border:1px solid var(--border);
+  padding:40px 44px;
+  margin-bottom:2px;
+}
+@media(max-width:520px){ .form-section{padding:24px 18px;} }
+
+.sec-label {
+  font-family:'Space Mono',monospace;
+  font-size:8.5px; letter-spacing:.32em;
+  color:var(--mid); text-transform:uppercase;
+  margin-bottom:28px;
+  display:flex; align-items:center; gap:14px;
+}
+.sec-label::after { content:''; flex:1; height:1px; background:var(--border); }
+
+.field-row {
+  display:grid; grid-template-columns:1fr 1fr;
+  gap:20px; margin-bottom:22px;
+}
+@media(max-width:520px){ .field-row{grid-template-columns:1fr;} }
+
+.field { display:flex; flex-direction:column; gap:7px; }
+.field label {
+  font-family:'Space Mono',monospace;
+  font-size:8.5px; letter-spacing:.22em;
+  color:var(--mid); text-transform:uppercase;
+}
+.field input,.field select {
+  background:var(--bg); border:1px solid var(--border);
+  color:var(--fg);
+  font-family:'Noto Serif TC','Noto Serif JP',serif;
+  font-size:13.5px; padding:9px 13px;
+  outline:none; transition:border-color .18s; width:100%;
+  -webkit-appearance:none; appearance:none;
+}
+.field input:focus,.field select:focus { border-color:var(--fg); }
+.field select {
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='5'%3E%3Cpath d='M0 0l4.5 5L9 0z' fill='%237a7770'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;
+  background-position:right 13px center;
+  padding-right:32px; cursor:pointer;
+}
+
+/* methods */
+.methods-grid {
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(195px,1fr));
+  gap:8px; margin-top:6px;
+}
+.method-card {
+  display:flex; align-items:flex-start; gap:9px;
+  padding:11px 13px;
+  border:1px solid var(--border); background:var(--bg);
+  cursor:pointer; transition:border-color .18s;
+}
+.method-card:hover { border-color:var(--fg); }
+.method-card input[type=checkbox] {
+  width:13px; height:13px; flex-shrink:0; margin-top:3px;
+  accent-color:var(--fg); cursor:pointer;
+}
+.mc-text { font-size:11.5px; line-height:1.5; color:var(--ink); }
+.mc-text small {
+  display:block;
+  font-family:'Space Mono',monospace;
+  font-size:8px; letter-spacing:.1em;
+  color:var(--mid); margin-top:2px;
+}
+
+/* submit area */
+.submit-area { display:flex; justify-content:center; margin-top:36px; }
+.btn-run {
+  font-family:'Space Mono',monospace;
+  font-size:10px; letter-spacing:.28em; text-transform:uppercase;
+  padding:15px 44px;
+  background:var(--fg); color:var(--bg); border:none;
+  cursor:pointer; transition:opacity .2s; position:relative; overflow:hidden;
+}
+.btn-run:hover { opacity:.82; }
+
+/* ── COMPUTATION LOG ── */
+#log-wrap {
+  display:none;
+  background:var(--fg); color:var(--bg);
+  border:1px solid var(--fg);
+  padding:28px 32px; margin-bottom:2px;
+  font-family:'Space Mono',monospace;
+}
+#log-wrap.visible { display:block; }
+.log-header {
+  font-size:9px; letter-spacing:.28em; opacity:.5;
+  text-transform:uppercase; margin-bottom:18px;
+  border-bottom:1px solid rgba(255,255,255,.1);
+  padding-bottom:10px;
+}
+#log-lines { font-size:11px; line-height:2.1; min-height:60px; }
+#log-lines .l-ok   { color:#b8f0b8; }
+#log-lines .l-warn { color:#f0e0a0; }
+#log-lines .l-err  { color:#f0a0a0; }
+#log-lines .l-dim  { opacity:.45; }
+#log-lines .l-num  { color:#a0c8f0; }
+.cursor { display:inline-block; width:7px; height:13px; background:var(--bg); animation:blink .75s step-start infinite; vertical-align:text-bottom; margin-left:2px; }
+@keyframes blink { 50%{opacity:0;} }
+
+/* ── RESULTS ── */
+#results { display:none; animation:fadeUp .5s ease; }
+#results.visible { display:block; }
+@keyframes fadeUp { from{opacity:0;transform:translateY(14px);} to{opacity:1;transform:none;} }
+
+.res-hero {
+  background:var(--fg); color:var(--bg);
+  padding:32px 40px; text-align:center;
+}
+.res-eyebrow {
+  font-family:'Space Mono',monospace;
+  font-size:8.5px; letter-spacing:.32em; opacity:.5;
+  text-transform:uppercase; margin-bottom:16px;
+}
+.res-verdict {
+  font-size:clamp(22px,5vw,42px);
+  font-weight:300; letter-spacing:-.01em;
+  line-height:1.25; margin-bottom:10px;
+}
+.res-conf {
+  font-family:'Space Mono',monospace;
+  font-size:10px; opacity:.6; letter-spacing:.18em;
+}
+.res-error-badge {
+  display:inline-block;
+  margin-top:12px;
+  font-family:'Space Mono',monospace;
+  font-size:8.5px; letter-spacing:.18em;
+  padding:4px 10px;
+  border:1px solid rgba(240,160,160,.5);
+  color:#f0a0a0; text-transform:uppercase;
+}
+
+/* methods breakdown */
+.methods-breakdown {
+  display:grid; grid-template-columns:1fr 1fr;
+  gap:2px; background:var(--border); margin:2px 0;
+}
+@media(max-width:520px){ .methods-breakdown{grid-template-columns:1fr;} }
+.mb-card { background:var(--paper); padding:20px 24px; }
+.mb-card.has-error { background:#fff5f5; }
+.mb-name {
+  font-family:'Space Mono',monospace;
+  font-size:8px; letter-spacing:.18em;
+  color:var(--mid); text-transform:uppercase; margin-bottom:8px;
+}
+.mb-val { font-size:17px; font-weight:300; margin-bottom:4px; }
+.mb-val.err-val { color:var(--red); }
+.mb-note { font-size:10.5px; color:var(--mid); line-height:1.6; font-style:italic; }
+.bar-t { height:3px; background:var(--border); margin-top:8px; }
+.bar-f { height:100%; background:var(--fg); transition:width 1s ease; }
+.bar-f.err-bar { background:var(--red); }
+
+/* verdict box */
+.verdict-box {
+  background:var(--paper); border:1px solid var(--border);
+  border-top:none; padding:36px 44px; text-align:center;
+}
+.verdict-box p {
+  font-size:12.5px; color:var(--mid);
+  line-height:2; max-width:500px; margin:0 auto; font-style:italic;
+}
+.disclaimer {
+  font-family:'Space Mono',monospace;
+  font-size:8.5px; letter-spacing:.14em;
+  color:var(--border); text-transform:uppercase; margin-top:18px;
+}
+
+/* reset */
+.btn-reset {
+  font-family:'Space Mono',monospace;
+  font-size:9.5px; letter-spacing:.22em; text-transform:uppercase;
+  padding:11px 28px; background:transparent;
+  color:var(--mid); border:1px solid var(--border);
+  cursor:pointer; transition:all .18s;
+  display:block; margin:22px auto 0;
+}
+.btn-reset:hover { background:var(--fg); color:var(--bg); border-color:var(--fg); }
+
+/* footer */
+footer { max-width:720px; margin:0 auto; padding:0 32px 56px; text-align:center; }
+.foot-rule { width:50px; height:1px; background:var(--border); margin:0 auto 20px; }
+.foot-text {
+  font-family:'Space Mono',monospace;
+  font-size:8.5px; letter-spacing:.18em;
+  color:var(--border); text-transform:uppercase; line-height:2.2;
+}
+</style>
+</head>
+<body>
+
+<!-- LANG -->
+<div class="lang-bar">
+  <button class="lang-btn" onclick="setLang('zh')" id="btn-zh">中文</button>
+  <button class="lang-btn active" onclick="setLang('ja')" id="btn-ja">日本語</button>
+  <button class="lang-btn" onclick="setLang('en')" id="btn-en">EN</button>
+</div>
+
+<!-- HEADER -->
+<header>
+  <span class="eyebrow" data-i18n="eyebrow"></span>
+  <h1><em data-i18n="h1a"></em><span data-i18n="h1b"></span></h1>
+  <p class="subtitle" data-i18n="subtitle"></p>
+  <div class="rule"></div>
+</header>
+
+<main>
+
+<!-- FORM -->
+<div id="form-wrap">
+  <div class="form-section">
+    <div class="sec-label" data-i18n="sec_basic"></div>
+
+    <div class="field-row">
+      <div class="field">
+        <label data-i18n="lbl_name"></label>
+        <input type="text" id="inp-name" data-i18n-ph="ph_name">
+      </div>
+      <div class="field">
+        <label data-i18n="lbl_birth"></label>
+        <input type="date" id="inp-birth">
+      </div>
+    </div>
+
+    <div class="field-row">
+      <div class="field">
+        <label data-i18n="lbl_blood"></label>
+        <select id="inp-blood">
+          <option value="" data-i18n="opt_sel"></option>
+          <option value="A">A</option>
+          <option value="B">B</option>
+          <option value="O">O</option>
+          <option value="AB">AB</option>
+        </select>
+      </div>
+      <div class="field">
+        <label data-i18n="lbl_hour"></label>
+        <select id="inp-hour">
+          <option value="" data-i18n="opt_unk"></option>
+          <option value="0">00:00–01:59</option>
+          <option value="1">02:00–03:59 (丑)</option>
+          <option value="2">04:00–05:59 (寅)</option>
+          <option value="3">06:00–07:59 (卯)</option>
+          <option value="4">08:00–09:59 (辰)</option>
+          <option value="5">10:00–11:59 (巳)</option>
+          <option value="6">12:00–13:59 (午)</option>
+          <option value="7">14:00–15:59 (未)</option>
+          <option value="8">16:00–17:59 (申)</option>
+          <option value="9">18:00–19:59 (酉)</option>
+          <option value="10">20:00–21:59 (戌)</option>
+          <option value="11">22:00–23:59 (亥)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="field-row">
+      <div class="field">
+        <label data-i18n="lbl_hand"></label>
+        <select id="inp-hand">
+          <option value="" data-i18n="opt_sel"></option>
+          <option value="R" data-i18n="opt_r"></option>
+          <option value="L" data-i18n="opt_l"></option>
+          <option value="B" data-i18n="opt_b"></option>
+        </select>
+      </div>
+      <div class="field">
+        <label data-i18n="lbl_lat"></label>
+        <input type="number" id="inp-lat" step="0.001" data-i18n-ph="ph_lat">
+      </div>
+    </div>
+
+    <div class="field">
+      <label data-i18n="lbl_methods"></label>
+      <div class="methods-grid" id="methods-grid"></div>
+    </div>
+
+  </div>
+
+  <div class="submit-area">
+    <button class="btn-run" id="btn-run" onclick="startComputation()">
+      <span data-i18n="btn_run"></span>
+    </button>
+  </div>
+</div>
+
+<!-- COMPUTATION LOG -->
+<div id="log-wrap">
+  <div class="log-header" data-i18n="log_hdr"></div>
+  <div id="log-lines"></div>
+</div>
+
+<!-- RESULTS -->
+<div id="results">
+  <div class="res-hero">
+    <div class="res-eyebrow" data-i18n="res_eyebrow"></div>
+    <div class="res-verdict" id="res-verdict"></div>
+    <div class="res-conf" id="res-conf"></div>
+    <div class="res-error-badge" id="res-err-badge" style="display:none" data-i18n="err_badge"></div>
+  </div>
+
+  <div class="methods-breakdown" id="breakdown-grid"></div>
+
+  <div class="verdict-box">
+    <p id="verdict-text"></p>
+    <div class="disclaimer" data-i18n="disclaimer"></div>
+  </div>
+
+  <button class="btn-reset" onclick="resetAll()" data-i18n="btn_reset"></button>
+</div>
+
+<div style="height:40px"></div>
+</main>
+
+<footer>
+  <div class="foot-rule"></div>
+  <div class="foot-text" data-i18n="footer"></div>
+</footer>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// i18n — 繁體中文(TW) · 日本語 · English (UK)
+// ═══════════════════════════════════════════════════════
+const T = {
+  zh: {
+    eyebrow:"實驗性研究計畫 · 多維演算法融合",
+    h1a:"科學", h1b:"預測父母性別",
+    subtitle:"整合生辰八字、月相力學、量子染色體共振、表觀遺傳溯源等九種演算法，對您父母的性別進行嚴謹而全面的推算。",
+    sec_basic:"基本資料",
+    lbl_name:"您的姓名", ph_name:"請輸入姓名",
+    lbl_birth:"出生日期",
+    lbl_blood:"血型", opt_sel:"請選擇",
+    lbl_hour:"出生時辰", opt_unk:"不確定",
+    lbl_hand:"慣用手", opt_r:"右手", opt_l:"左手", opt_b:"雙手皆可",
+    lbl_lat:"出生地緯度（選填）", ph_lat:"例：25.0330",
+    lbl_methods:"選擇演算法組合",
+    btn_run:"開始預測",
+    log_hdr:"運算日誌 · 即時輸出",
+    res_eyebrow:"預測結果",
+    err_badge:"⚠ 偵測到異常值",
+    disclaimer:"本工具僅供娛樂 · 演算法結果不具任何醫學或法律效力",
+    btn_reset:"重新預測",
+    footer:"科學預測父母性別 · v1.0.0 · MIT License\nMade with sincerity and zero scientific basis",
+    conf_lbl:"綜合置信度",
+    father:"父親", mother:"母親",
+    male:"男性", female:"女性",
+    unknown_gender:"性別不明",
+    verdict_normal: n=>`經多維交叉驗算，${n}的父母性別已獲得高信度確認。本系統建議將結果列印存檔，以備不時之需。`,
+    verdict_error:  n=>`⚠ 部分演算法在推算${n}的親代性別時產生了與預期相悖的結果。研究團隊正積極調查異常來源，暫不排除宇宙射線干擾或量子退相干等因素。`,
+    verdict_chaos:  n=>`本次運算過程中偵測到多重邏輯矛盾。${n}的部分親代性別結果已超出本模型的理論邊界，建議重新輸入資料，或考慮向本研究中心申請人工複核。`,
+  },
+  ja: {
+    eyebrow:"実験的研究プロジェクト · 多次元アルゴリズム融合",
+    h1a:"科学的に", h1b:"親の性別を予測する",
+    subtitle:"干支推命・月相力学・量子染色体共鳴・後成遺伝溯源など9種のアルゴリズムを統合し、ご両親の性別を厳密かつ包括的に推算します。",
+    sec_basic:"基本情報",
+    lbl_name:"お名前", ph_name:"名前を入力してください",
+    lbl_birth:"生年月日",
+    lbl_blood:"血液型", opt_sel:"選択してください",
+    lbl_hour:"出生時刻", opt_unk:"不明",
+    lbl_hand:"利き手", opt_r:"右手", opt_l:"左手", opt_b:"両手利き",
+    lbl_lat:"出生地の緯度（任意）", ph_lat:"例：35.6762",
+    lbl_methods:"アルゴリズムの選択",
+    btn_run:"予測を開始する",
+    log_hdr:"演算ログ · リアルタイム出力",
+    res_eyebrow:"予測結果",
+    err_badge:"⚠ 異常値を検出",
+    disclaimer:"本ツールは娯楽目的のみ · 結果に医学的・法的効力はありません",
+    btn_reset:"再予測",
+    footer:"親の性別を科学的に予測する · v1.0.0 · MIT License\nMade with sincerity and zero scientific basis",
+    conf_lbl:"総合信頼度",
+    father:"父", mother:"母",
+    male:"男性", female:"女性",
+    unknown_gender:"性別不明",
+    verdict_normal: n=>`多次元交差検証の結果、${n}さんの親の性別は高い信頼度で確認されました。本システムは結果を印刷して保管されることを推奨します。`,
+    verdict_error:  n=>`⚠ 一部のアルゴリズムが${n}さんの親代性別推算において予期せぬ結果を出力しました。研究チームは現在、宇宙線干渉または量子デコヒーレンスを含む異常原因を調査中です。`,
+    verdict_chaos:  n=>`今回の演算中に複数の論理矛盾が検出されました。${n}さんの一部の親代性別結果は本モデルの理論的境界を超えています。データを再入力するか、当研究センターへ手動複核をご申請ください。`,
+  },
+  en: {
+    eyebrow:"Experimental Research Programme · Multi-Dimensional Algorithm Fusion",
+    h1a:"Scientific", h1b:"Prediction of Parental Gender",
+    subtitle:"Integrating nine algorithms — including Ganzhi Astrology, Lunar Phase Dynamics, Quantum Chromosomal Resonance, and Epigenetic Memory Tracing — to rigorously and comprehensively predict your parents' genders.",
+    sec_basic:"Basic Information",
+    lbl_name:"Your Name", ph_name:"Enter your name",
+    lbl_birth:"Date of Birth",
+    lbl_blood:"Blood Group", opt_sel:"Please select",
+    lbl_hour:"Birth Hour", opt_unk:"Unknown",
+    lbl_hand:"Dominant Hand", opt_r:"Right", opt_l:"Left", opt_b:"Ambidextrous",
+    lbl_lat:"Birth Latitude (optional)", ph_lat:"e.g. 51.5074",
+    lbl_methods:"Select Algorithm Suite",
+    btn_run:"Begin Prediction",
+    log_hdr:"Computation Log · Live Output",
+    res_eyebrow:"Prediction Result",
+    err_badge:"⚠ Anomalous Value Detected",
+    disclaimer:"For entertainment only · Results carry no medical or legal weight whatsoever",
+    btn_reset:"Predict Again",
+    footer:"Scientific Prediction of Parental Gender · v1.0.0 · MIT License\nMade with sincerity and zero scientific basis",
+    conf_lbl:"Composite Confidence",
+    father:"Father", mother:"Mother",
+    male:"Male", female:"Female",
+    unknown_gender:"Gender Undetermined",
+    verdict_normal: n=>`Following multi-dimensional cross-validation, the genders of ${n}'s parents have been confirmed with high confidence. The system recommends printing and archiving the result for future reference.`,
+    verdict_error:  n=>`⚠ Certain algorithms produced results contrary to expected parameters when calculating the parental genders of ${n}. The research team is actively investigating possible causes, including cosmic ray interference and quantum decoherence.`,
+    verdict_chaos:  n=>`Multiple logical contradictions were detected during this computation. Some parental gender results for ${n} have exceeded the theoretical boundaries of this model. Please re-enter your data or consider applying to our research centre for manual review.`,
+  },
+};
+
+// ═══════════════════════════════════════════════════════
+// METHODS
+// ═══════════════════════════════════════════════════════
+const METHODS = [
+  { id:"ganzhi",
+    zh:{ name:"生辰八字推算", desc:"天干地支 · 五行陰陽" },
+    ja:{ name:"干支推命法", desc:"天干地支 · 五行陰陽" },
+    en:{ name:"Ganzhi Astrology", desc:"Heavenly Stems · Earthly Branches" },
+    w:.12 },
+  { id:"lunar",
+    zh:{ name:"月相周期力學", desc:"朔望 · 引潮力分析" },
+    ja:{ name:"月相周期力学", desc:"朔望 · 潮汐力解析" },
+    en:{ name:"Lunar Phase Mechanics", desc:"Syzygy · Tidal Force Analysis" },
+    w:.11 },
+  { id:"quantum",
+    zh:{ name:"量子染色體共振模型", desc:"XX/XY · 量子糾纏預測" },
+    ja:{ name:"量子染色体共鳴モデル", desc:"XX/XY · 量子もつれ予測" },
+    en:{ name:"Quantum Chromosomal Resonance", desc:"XX/XY · Quantum Entanglement" },
+    w:.14 },
+  { id:"epigenetic",
+    zh:{ name:"表觀遺傳記憶溯源", desc:"甲基化圖譜 · 代際傳遞" },
+    ja:{ name:"後成遺伝記憶溯源", desc:"メチル化マップ · 世代間伝達" },
+    en:{ name:"Epigenetic Memory Tracing", desc:"Methylation Maps · Inter-gen Transfer" },
+    w:.13 },
+  { id:"geomag",
+    zh:{ name:"地磁場出生定位算法", desc:"磁偏角 · 極光指數校正" },
+    ja:{ name:"地磁場出生測位", desc:"磁気偏角 · オーロラ指数補正" },
+    en:{ name:"Geomagnetic Birth Positioning", desc:"Declination · Aurora Index Correction" },
+    w:.09 },
+  { id:"blood",
+    zh:{ name:"血型拓撲遺傳圖譜", desc:"ABO · Rh · 親子概率矩陣" },
+    ja:{ name:"血液型トポロジー遺伝", desc:"ABO · Rh · 親子確率行列" },
+    en:{ name:"Blood-Type Topological Heredity", desc:"ABO · Rh · Parentage Matrix" },
+    w:.10 },
+  { id:"handedness",
+    zh:{ name:"慣用手神經鏡像推導", desc:"左右腦 · 遺傳優勢側化" },
+    ja:{ name:"利き手神経鏡像導出", desc:"左右脳 · 遺伝的優位側化" },
+    en:{ name:"Handedness Neural Mirror", desc:"Cerebral Lateralisation Genetics" },
+    w:.08 },
+  { id:"bayesian",
+    zh:{ name:"加權貝葉斯融合框架", desc:"先驗分佈 · 後驗更新" },
+    ja:{ name:"重み付きベイズ融合", desc:"事前分布 · 事後更新" },
+    en:{ name:"Weighted Bayesian Fusion", desc:"Prior Distribution · Posterior Update" },
+    w:.15 },
+  { id:"evogen",
+    zh:{ name:"進化遺傳多態分析", desc:"SNP圖譜 · 選擇壓力向量" },
+    ja:{ name:"進化遺伝多態解析", desc:"SNPマップ · 選択圧ベクトル" },
+    en:{ name:"Evolutionary Polymorphism Analysis", desc:"SNP Mapping · Selection Pressure" },
+    w:.08 },
+];
+
+// ═══════════════════════════════════════════════════════
+// NONSENSE LOG LINES — three languages, per method
+// ═══════════════════════════════════════════════════════
+const LOG_LINES = {
+  ganzhi:{
+    zh:["初始化天干地支索引……","計算日主五行屬性……","與親代陰陽極性作交叉比對……","五行生剋矩陣已載入 (128×128)……","庚金克甲木係數修正 → +0.037……"],
+    ja:["天干地支インデックスを初期化中……","日主五行属性を計算中……","親代陰陽極性との交差照合……","五行相生相剋行列読み込み完了 (128×128)……","庚金克甲木係数補正 → +0.037……"],
+    en:["Initialising Heavenly Stems index…","Computing Day-Master elemental affinity…","Cross-referencing parental yin/yang polarity…","Loading five-element matrix (128×128)…","Applying Geng-Metal overrides Jiǎ-Wood correction → +0.037…"],
+  },
+  lunar:{
+    zh:["讀取 NASA JPL 月相暦資料庫……","計算出生日潮汐引力位能……","月球赤緯偏差補正 Δδ = −0.0021°……","農曆月齡對齊至親代性別先驗分佈……","蟹狀星雲背景輻射噪音過濾……"],
+    ja:["NASA JPL月暦データベースを読み込み中……","出生日の潮汐引力ポテンシャルを計算中……","月球赤緯偏差補正 Δδ = −0.0021°……","農暦月齢を親代性別事前分布に整合……","かに星雲バックグラウンド放射ノイズフィルタリング……"],
+    en:["Loading NASA JPL lunar ephemeris database…","Computing tidal gravitational potential on birth date…","Applying lunar declination correction Δδ = −0.0021°…","Aligning lunar age to parental gender prior distribution…","Filtering Crab Nebula background radiation noise…"],
+  },
+  quantum:{
+    zh:["啟動量子態疊加模擬器……","建立 XX/XY 染色體糾纏對 (Bell態 Φ+)……","施加 von Neumann 測量算符……","偵測到退相干雜訊，執行錯誤修正碼 (surface code)……","親代性別波函數坍縮完成……"],
+    ja:["量子重ね合わせシミュレーターを起動中……","XX/XY染色体もつれペアを構築中 (Bell状態 Φ+)……","von Neumann測定演算子を適用中……","デコヒーレンスノイズ検出 → エラー訂正コード実行 (surface code)……","親代性別波動関数の崩壊完了……"],
+    en:["Launching quantum superposition simulator…","Constructing XX/XY chromosomal entanglement pair (Bell state Φ+)…","Applying von Neumann measurement operator…","Decoherence noise detected → executing surface code error correction…","Parental gender wavefunction collapse complete…"],
+  },
+  epigenetic:{
+    zh:["解析全基因組甲基化圖譜 (WGBS 模式)……","識別 CpG 島差異甲基化區域……","溯源第二代 imprinting 記憶標記……","親代 H3K27me3 染色質修飾向量載入……","代際表觀遺傳信號強度：72.3 dB……"],
+    ja:["全ゲノムメチル化マップ解析中 (WGBSモード)……","CpGアイランド差異メチル化領域を識別中……","第2世代インプリンティング記憶マーカーを溯源中……","親代 H3K27me3 クロマチン修飾ベクター読み込み……","世代間後成遺伝信号強度：72.3 dB……"],
+    en:["Parsing whole-genome methylation map (WGBS mode)…","Identifying CpG island differentially methylated regions…","Tracing second-generation imprinting memory markers…","Loading parental H3K27me3 chromatin modification vector…","Inter-generational epigenetic signal strength: 72.3 dB…"],
+  },
+  geomag:{
+    zh:["讀取 IGRF-13 地磁場模型……","計算出生座標地磁偏角……","載入太陽風指數 Kp = 3.7……","極光橢圓邊界修正係數套用……","地磁軸心偏移補償完成……"],
+    ja:["IGRF-13地磁場モデルを読み込み中……","出生座標の地磁気偏角を計算中……","太陽風指数 Kp = 3.7 を読み込み……","オーロラ楕円境界補正係数を適用……","地磁軸心オフセット補償完了……"],
+    en:["Loading IGRF-13 geomagnetic field model…","Computing magnetic declination at birth coordinates…","Importing solar wind index Kp = 3.7…","Applying aurora oval boundary correction factor…","Geomagnetic axial offset compensation complete…"],
+  },
+  blood:{
+    zh:["建立 ABO × Rh 全排列概率表……","套用 Hardy–Weinberg 平衡方程……","計算親代基因型後驗概率 P(G|O)……","RhD 因子相容性矩陣校驗通過……","血型拓撲親子圖譜收斂……"],
+    ja:["ABO × Rh全排列確率表を構築中……","Hardy–Weinberg平衡方程式を適用……","親代遺伝子型事後確率 P(G|O) を計算中……","RhD因子適合性行列検証通過……","血液型トポロジー親子図譜収束……"],
+    en:["Constructing ABO × Rh full permutation probability table…","Applying Hardy–Weinberg equilibrium equation…","Computing parental genotype posterior probability P(G|O)…","RhD factor compatibility matrix validation passed…","Blood-type topological parentage graph converged…"],
+  },
+  handedness:{
+    zh:["分析慣用手神經側化程度……","載入 FOXP2 基因表達向量……","鏡像神經元網路拓撲已重建……","慣用手遺傳優勢係數：H = 0.81……","親代神經側化遺傳路徑確認……"],
+    ja:["利き手神経側化度を分析中……","FOXP2遺伝子発現ベクターを読み込み……","ミラーニューロンネットワークトポロジーを再構築……","利き手遺伝優位係数：H = 0.81……","親代神経側化遺伝経路確認……"],
+    en:["Analysing degree of handedness neural lateralisation…","Loading FOXP2 gene expression vector…","Reconstructing mirror neuron network topology…","Handedness heritability coefficient: H = 0.81…","Parental neural lateralisation inheritance pathway confirmed…"],
+  },
+  bayesian:{
+    zh:["初始化貝葉斯網路 DAG (節點數：847)……","執行馬可夫鏈蒙地卡羅採樣 (n=10⁶)……","後驗分佈收斂診斷：R̂ = 1.002……","計算各方法似然比 LR……","加權融合完成，綜合後驗已更新……"],
+    ja:["ベイズネットワーク DAG を初期化中 (ノード数：847)……","マルコフ連鎖モンテカルロサンプリング実行 (n=10⁶)……","事後分布収束診断：R̂ = 1.002……","各手法の尤度比 LR を計算中……","重み付き融合完了、総合事後分布を更新……"],
+    en:["Initialising Bayesian network DAG (847 nodes)…","Running Markov Chain Monte Carlo sampling (n=10⁶)…","Posterior convergence diagnostic: R̂ = 1.002…","Computing per-method likelihood ratios LR…","Weighted fusion complete, composite posterior updated…"],
+  },
+  evogen:{
+    zh:["對齊 1000 Genomes Phase 3 SNP 資料集……","計算親代單倍型頻率 (EM 演算法)……","選擇壓力向量主成分分析……","性染色體連鎖 SNP 標記過濾……","進化模型 AIC/BIC 選擇完成……"],
+    ja:["1000 Genomes Phase 3 SNPデータセットと整合中……","親代ハプロタイプ頻度を計算中 (EMアルゴリズム)……","選択圧ベクトルの主成分分析……","性染色体連鎖 SNPマーカーフィルタリング……","進化モデル AIC/BIC 選択完了……"],
+    en:["Aligning 1000 Genomes Phase 3 SNP dataset…","Computing parental haplotype frequencies (EM algorithm)…","Principal component analysis of selection pressure vectors…","Sex-chromosome-linked SNP marker filtering…","Evolutionary model AIC/BIC selection complete…"],
+  },
+};
+
+// Nonsense "anomaly" lines injected when error occurs
+const ANOMALY_LINES = {
+  zh:["⚠ 偵測到非典型親代性別信號……","主成分 PC2 發生反轉，正在重新校準……","量子糾纏對失去相位同調，執行補救程序……","WARNING: 後驗分佈尾部出現負概率異常值……","資料流中偵測到未知宇宙射線脈衝，強制降級處理……"],
+  ja:["⚠ 非典型的な親代性別信号を検出……","主成分 PC2 が反転、再校正を実行中……","量子もつれ対が位相コヒーレンスを喪失、修復手順を実行……","WARNING: 事後分布の裾に負確率異常値を検出……","データストリームで未知の宇宙線パルスを検出、強制ダウングレード処理……"],
+  en:["⚠ Atypical parental gender signal detected…","Principal component PC2 inverted — recalibrating…","Quantum entanglement pair lost phase coherence — executing recovery procedure…","WARNING: Negative probability outlier detected in posterior tail…","Unknown cosmic ray pulse detected in data stream — forced downgrade applied…"],
+};
+
+// ═══════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════
+let lang = 'ja';
+
+// ═══════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════
+function init() {
+  buildMethodsGrid();
+  applyLang('ja');
+}
+
+function buildMethodsGrid() {
+  const g = document.getElementById('methods-grid');
+  g.innerHTML = METHODS.map(m=>`
+    <label class="method-card">
+      <input type="checkbox" name="method" value="${m.id}" checked>
+      <div class="mc-text">
+        <span data-mn="${m.id}"></span>
+        <small data-md="${m.id}"></small>
+      </div>
+    </label>`).join('');
+}
+
+// ═══════════════════════════════════════════════════════
+// LANG
+// ═══════════════════════════════════════════════════════
+function setLang(l) {
+  lang = l;
+  applyLang(l);
+  document.querySelectorAll('.lang-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('btn-'+l).classList.add('active');
+  document.documentElement.lang = l==='zh'?'zh-TW':l==='ja'?'ja':'en-GB';
+}
+
+function applyLang(l) {
+  const t = T[l];
+  document.querySelectorAll('[data-i18n]').forEach(el=>{
+    const k = el.dataset.i18n;
+    if(typeof t[k]==='string') el.textContent = t[k];
+  });
+  document.querySelectorAll('[data-i18n-ph]').forEach(el=>{
+    const k = el.dataset.i18nPh;
+    if(t[k]) el.placeholder = t[k];
+  });
+  METHODS.forEach(m=>{
+    document.querySelectorAll(`[data-mn="${m.id}"]`).forEach(el=>el.textContent=m[l].name);
+    document.querySelectorAll(`[data-md="${m.id}"]`).forEach(el=>el.textContent=m[l].desc);
+  });
+  // select option text
+  const upd = (id,keys)=>{
+    const s = document.getElementById(id); if(!s) return;
+    keys.forEach(([i,k])=>{ if(s.options[i] && t[k]) s.options[i].text=t[k]; });
+  };
+  upd('inp-blood',[[0,'opt_sel']]);
+  upd('inp-hour', [[0,'opt_unk']]);
+  upd('inp-hand', [[0,'opt_sel'],[1,'opt_r'],[2,'opt_l'],[3,'opt_b']]);
+}
+
+// ═══════════════════════════════════════════════════════
+// DETERMINISTIC HASH
+// ═══════════════════════════════════════════════════════
+function hash32(s) {
+  let h=2166136261>>>0;
+  for(let i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=Math.imul(h,16777619)>>>0; }
+  return h;
+}
+function seededRand(seed,salt){ return (hash32(seed+salt)%1000)/1000; }
+
+// ═══════════════════════════════════════════════════════
+// RANDOM OUTCOME ENGINE
+// ═══════════════════════════════════════════════════════
+// Returns { fatherGender, motherGender, conf, hasError, errorMethods }
+function computeOutcome(inputs, selectedIds) {
+  const key = inputs.name + inputs.birth + inputs.blood + inputs.hour;
+
+  // ~70% normal, ~20% one wrong, ~10% chaos
+  const fate = seededRand(key, 'fate');
+  const fathConf = 82 + Math.round(seededRand(key,'fc')*15); // 82–97
+  const mothConf = 82 + Math.round(seededRand(key,'mc')*15);
+
+  let fatherGender, motherGender, errorTier, errorMethods=[];
+
+  if(fate < 0.68) {
+    // Normal (correct)
+    fatherGender='male'; motherGender='female'; errorTier=0;
+  } else if(fate < 0.87) {
+    // One anomaly
+    errorTier=1;
+    const which = seededRand(key,'which');
+    if(which<0.45){ fatherGender='female'; motherGender='female'; }
+    else if(which<0.72){ fatherGender='male'; motherGender='male'; }
+    else if(which<0.88){ fatherGender='female'; motherGender='male'; }
+    else { fatherGender='male'; motherGender='female'; } // right answer, but "anomaly" flagged
+    // 1–2 methods flagged as errors
+    const shuffled = [...selectedIds].sort(()=>seededRand(key,'sh'+Math.random())-0.5);
+    errorMethods = shuffled.slice(0, 1 + Math.round(seededRand(key,'em')));
+  } else {
+    // Chaos
+    errorTier=2;
+    fatherGender=seededRand(key,'fcg')<0.5?'male':'unknown';
+    motherGender=seededRand(key,'mcg')<0.5?'female':'unknown';
+    const shuffled2 = [...selectedIds].sort(()=>seededRand(key,'sh2'+Math.random())-0.5);
+    errorMethods = shuffled2.slice(0, 2 + Math.round(seededRand(key,'em2')*2));
+  }
+
+  // Per-method confidence
+  const methodResults = selectedIds.map(id=>{
+    const base = 80 + Math.round(seededRand(key,id)*16);
+    const isErr = errorMethods.includes(id);
+    const conf = isErr ? 20+Math.round(seededRand(key,id+'e')*35) : base;
+    return { id, conf, isErr };
+  });
+
+  const avgConf = Math.round(methodResults.reduce((s,r)=>s+r.conf,0)/methodResults.length);
+
+  return { fatherGender, motherGender, conf:avgConf, errorTier, errorMethods, methodResults };
+}
+
+// ═══════════════════════════════════════════════════════
+// COMPUTATION LOG ANIMATION
+// ═══════════════════════════════════════════════════════
+async function animateLog(selectedIds, outcome, name) {
+  const t = T[lang];
+  const logEl = document.getElementById('log-lines');
+  logEl.innerHTML = '';
+
+  const logWrap = document.getElementById('log-wrap');
+  logWrap.classList.add('visible');
+
+  const append = (text, cls='', delay=0)=>new Promise(res=>{
+    setTimeout(()=>{
+      const span = document.createElement('div');
+      span.className = cls;
+      span.textContent = text;
+      logEl.appendChild(span);
+      logEl.scrollTop = logEl.scrollHeight;
+      res();
+    }, delay);
+  });
+
+  const pause = ms=>new Promise(r=>setTimeout(r,ms));
+
+  // Preamble
+  const preambles = {
+    zh:["系統初始化完成。","加載使用者資料中…","啟動多維演算法引擎…",""],
+    ja:["システム初期化完了。","ユーザーデータを読み込み中…","多次元アルゴリズムエンジンを起動中…",""],
+    en:["System initialised.","Loading user data…","Starting multi-dimensional algorithm engine…",""],
+  };
+  for(const line of preambles[lang]){
+    await append(line, 'l-dim'); await pause(110);
+  }
+
+  // Per method
+  let lineDelay = 0;
+  for(const id of selectedIds){
+    const m = METHODS.find(x=>x.id===id);
+    const lines = LOG_LINES[id]?.[lang] ?? [];
+    const isErr = outcome.errorMethods.includes(id);
+
+    await append(`── ${m[lang].name}`, 'l-ok'); await pause(70);
+    for(const line of lines){
+      await append(`   ${line}`, 'l-dim'); await pause(85);
+    }
+    if(isErr){
+      const anomalies = ANOMALY_LINES[lang];
+      const pick = anomalies[Math.floor(seededRand(id,'anom')*anomalies.length)];
+      await append(`   ${pick}`, 'l-err'); await pause(180);
+      await append(`   → 強制輸出低信度結果`, 'l-warn'); await pause(120);
+    } else {
+      await append(`   → OK`, 'l-ok'); await pause(60);
+    }
+  }
+
+  await pause(150);
+
+  // Fusion step
+  const fusions = {
+    zh:["執行貝葉斯加權融合……","計算綜合後驗置信度……",""],
+    ja:["ベイズ加重融合を実行中……","総合事後信頼度を計算中……",""],
+    en:["Executing Bayesian weighted fusion…","Computing composite posterior confidence…",""],
+  };
+  for(const l of fusions[lang]){ await append(l,'l-dim'); await pause(130); }
+
+  if(outcome.errorTier>0){
+    const warns = {
+      zh:`⚠ 偵測到 ${outcome.errorMethods.length} 個演算法異常，結果可信度已降級。`,
+      ja:`⚠ ${outcome.errorMethods.length}個のアルゴリズム異常を検出、信頼度をダウングレード。`,
+      en:`⚠ ${outcome.errorMethods.length} algorithmic anomalies detected — confidence downgraded.`,
+    };
+    await append(warns[lang],'l-warn'); await pause(200);
+  }
+
+  const done = { zh:"演算完成。", ja:"演算完了。", en:"Computation complete." };
+  await append(done[lang],'l-ok'); await pause(200);
+  await append('', 'l-dim');
+}
+
+// ═══════════════════════════════════════════════════════
+// RENDER RESULTS
+// ═══════════════════════════════════════════════════════
+function renderResults(outcome, name, selectedIds) {
+  const t = T[lang];
+  const gLabel = g => g==='male'?t.male : g==='female'?t.female : t.unknown_gender;
+
+  // Hero
+  const fStr = `${t.father}: ${gLabel(outcome.fatherGender)}`;
+  const mStr = `${t.mother}: ${gLabel(outcome.motherGender)}`;
+  document.getElementById('res-verdict').textContent = `${fStr} · ${mStr}`;
+  document.getElementById('res-conf').textContent = `${t.conf_lbl} ${outcome.conf}%`;
+
+  const badge = document.getElementById('res-err-badge');
+  if(outcome.errorTier>0){ badge.style.display=''; }
+  else { badge.style.display='none'; }
+
+  // Breakdown
+  const grid = document.getElementById('breakdown-grid');
+  grid.innerHTML = outcome.methodResults.map(r=>{
+    const m = METHODS.find(x=>x.id===r.id);
+    const cls = r.isErr?'mb-card has-error':'mb-card';
+    const valCls = r.isErr?'mb-val err-val':'mb-val';
+    const barCls = r.isErr?'bar-f err-bar':'bar-f';
+    return `
+    <div class="${cls}">
+      <div class="mb-name">${m[lang].name}</div>
+      <div class="${valCls}">${r.conf}%</div>
+      <div class="mb-note">${m[lang].desc}</div>
+      <div class="bar-t"><div class="${barCls}" style="width:0%" data-w="${r.conf}"></div></div>
+    </div>`;
+  }).join('');
+
+  // Verdict text
+  const vt = outcome.errorTier===0 ? t.verdict_normal(name)
+           : outcome.errorTier===1 ? t.verdict_error(name)
+           : t.verdict_chaos(name);
+  document.getElementById('verdict-text').textContent = vt;
+
+  // Show
+  document.getElementById('results').classList.add('visible');
+
+  // Animate bars
+  setTimeout(()=>{
+    document.querySelectorAll('.bar-f[data-w]').forEach((b,i)=>{
+      setTimeout(()=>{ b.style.width = b.dataset.w+'%'; },i*70);
+    });
+  },80);
+}
+
+// ═══════════════════════════════════════════════════════
+// MAIN FLOW
+// ═══════════════════════════════════════════════════════
+async function startComputation() {
+  const selectedIds = [...document.querySelectorAll('input[name="method"]:checked')].map(el=>el.value);
+  if(!selectedIds.length){
+    const warn = {zh:"請至少選擇一種演算法！",ja:"少なくとも1つのアルゴリズムを選択してください！",en:"Please select at least one algorithm!"};
+    alert(warn[lang]); return;
+  }
+
+  const name = document.getElementById('inp-name').value.trim()
+    || (lang==='zh'?'使用者':lang==='ja'?'ユーザー':'User');
+  const birth = document.getElementById('inp-birth').value || '2000-06-15';
+  const blood = document.getElementById('inp-blood').value || 'O';
+  const hour  = document.getElementById('inp-hour').value || '6';
+  const lat   = document.getElementById('inp-lat').value  || '35';
+
+  const inputs = { name, birth, blood, hour, lat };
+  const outcome = computeOutcome(inputs, selectedIds);
+
+  // Hide form, show log
+  document.getElementById('form-wrap').style.display='none';
+  document.getElementById('results').classList.remove('visible');
+  document.getElementById('results').style.display='';
+
+  await animateLog(selectedIds, outcome, name);
+
+  // Slight pause then show results
+  await new Promise(r=>setTimeout(r,400));
+  document.getElementById('log-wrap').classList.remove('visible');
+  renderResults(outcome, name, selectedIds);
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function resetAll() {
+  document.getElementById('results').classList.remove('visible');
+  document.getElementById('log-wrap').classList.remove('visible');
+  document.getElementById('log-lines').innerHTML='';
+  document.getElementById('form-wrap').style.display='';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// ═══════════════════════════════════════════════════════
+init();
+</script>
+</body>
+</html>
